@@ -253,8 +253,8 @@ Sha1Hash        HashTree::DeriveRoot () {
             p = p.parent();
             hash = Sha1Hash(hash,Sha1Hash::ZERO);
         } else {
-            if (c<0 || peaks_[c]!=p.sibling())
-                return Sha1Hash::ZERO;
+            assert(c>=0);
+            assert(peaks_[c]==p.sibling());
             hash = Sha1Hash(peak_hashes_[c],hash);
             p = p.parent();
             c--;

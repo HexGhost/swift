@@ -132,7 +132,7 @@ struct bin64_t {
 
     /** Get the paretn bin. */
     bin64_t parent () const {
-        uint64_t tbs = tail_bits(), ntbs = (tbs+1)|tbs;
+        uint64_t tbs = tail_bits(), ntbs = tbs+1;
         return bin64_t( (v&~ntbs) | tbs );
     }
 
