@@ -124,11 +124,11 @@ void            HashTree::Submit () {
         print_error("mmap failed");
         return;
     }
-    size_t last_piece_size = (sizek_ - 1) % (1<<10) + 1;
+    size_t last_piece_size = (size_ - 1) % (1<<10) + 1;
     for (size_t i=0; i<sizek_; i++) {
         char kilo[1<<10];
         size_t rd = read(fd_,kilo,1<<10);
-        if (rd<(1<<10) && i!=sizek_-1) {
+        if (rd<last_piece_size || (rd<(1<<10) && i!=sizek_-1) ) {
             free(hashes_);
             hashes_=NULL;
             return;
@@ -147,7 +147,6 @@ void            HashTree::Submit () {
         peak_hashes_[p] = hashes_[peaks_[p]];
 
     root_hash_ = DeriveRoot();
-
 }
 
 
