@@ -33,6 +33,8 @@ struct Sha1Hash {
     bool    operator == (const Sha1Hash& b) const
         { return 0==memcmp(bits,b.bits,SIZE); }
     bool    operator != (const Sha1Hash& b) const { return !(*this==b); }
+    bool    operator < (const Sha1Hash& b) const
+        { return memcmp(bits,b.bits,SIZE)<0; }
     const char* operator * () const { return (char*) bits; }
     
     const static Sha1Hash ZERO;

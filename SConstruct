@@ -18,7 +18,7 @@ TestDir='tests'
 target = 'swift'
 source = [ 'bin64.cpp','sha1.cpp','hashtree.cpp','datagram.cpp','bins.cpp',
     'transfer.cpp', 'channel.cpp', 'sendrecv.cpp', 'send_control.cpp',
-    'compat.cpp']
+    'compat.cpp', 'cache.cpp']
 
 env = Environment()
 if sys.platform == "win32":
