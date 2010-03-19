@@ -24,7 +24,6 @@ void    Channel::AddPeakHashes (Datagram& dgram) {
         dgram.Push8(SWIFT_HASH);
         dgram.Push32((uint32_t)peak);
         dgram.PushHash(file().peak_hash(i));
-        //DLOG(INFO)<<"#"<<id<<" +pHASH"<<file().peak(i);
         dprintf("%s #%u +phash %s\n",tintstr(),id_,peak.str());
     }
 }
@@ -38,7 +37,6 @@ void    Channel::AddUncleHashes (Datagram& dgram, bin64_t pos) {
         dgram.Push8(SWIFT_HASH);
         dgram.Push32((uint32_t)uncle);
         dgram.PushHash( file().hash(uncle) );
-        //DLOG(INFO)<<"#"<<id<<" +uHASH"<<uncle;
         dprintf("%s #%u +hash %s\n",tintstr(),id_,uncle.str());
         pos = pos.parent();
     }
@@ -135,6 +133,7 @@ void    Channel::Send () {
     last_send_time_ = NOW;
     sent_since_recv_++;
     dgrams_sent_++;
+    Reschedule();
 }
 
 
@@ -284,6 +283,7 @@ void    Channel::Recv (Datagram& dgram) {
     }
     last_recv_time_ = NOW;
     sent_since_recv_ = 0;
+    Reschedule();
 }
 
 
@@ -325,6 +325,8 @@ bin64_t Channel::OnData (Datagram& dgram) {  // TODO: HAVE NONE for corrupted da
     data_in_ = tintbin(NOW,bin64_t::NONE);
     if (!ok)
         return bin64_t::NONE;
+    for(int i=0; i<transfer().cb_installed; i++)
+        transfer().callbacks[i](transfer().fd(),pos);  // FIXME FIXME FIXME
     data_in_.bin = pos;
     if (pos!=bin64_t::NONE) {
         if (last_data_in_time_) {
@@ -474,11 +476,11 @@ void    Channel::AddPex (Datagram& dgram) {
 }
 
 
-Channel*    Channel::RecvDatagram (int socket) {
+void    Channel::RecvDatagram (SOCKET socket) {
     Datagram data(socket);
     data.Recv();
     const Address& addr = data.address();
-#define return_log(...) { printf(__VA_ARGS__); return NULL; }
+#define return_log(...) { fprintf(stderr,__VA_ARGS__); return; }
     if (data.size()<4)
         return_log("datagram shorter than 4 bytes %s\n",addr.str());
     uint32_t mych = data.Pull32();
@@ -519,7 +521,6 @@ Channel*    Channel::RecvDatagram (int socket) {
     }
     //dprintf("recvd %i bytes for %i\n",data.size(),channel->id);
     channel->Recv(data);
-    return channel;
 }
 
 
@@ -545,18 +546,12 @@ void    Channel::Loop (tint howlong) {
             dprintf("%s #%u sch_send %s\n",tintstr(),sender->id(),
                     tintstr(send_time));
             sender->Send();
-            sender->Reschedule();
 
         } else {  // it's too early, wait
 
             tint towait = min(limit,send_time) - NOW;
             dprintf("%s #0 waiting %lliusec\n",tintstr(),towait);
-            int rd = Datagram::Wait(socket_count,sockets,towait);
-            if (rd!=INVALID_SOCKET) { // in meantime, received something
-                Channel* receiver = RecvDatagram(rd);
-                if (receiver) // receiver's state may have changed
-                    receiver->Reschedule();
-            }
+            Datagram::Wait(socket_count,sockets,towait);
             if (sender)  // get back to that later
                 send_queue.push(tintbin(send_time,sender->id()));
 

@@ -22,7 +22,7 @@ std::vector<FileTransfer*> FileTransfer::files(20);
 // FIXME: separate Bootstrap() and Download(), then Size(), Progress(), SeqProgress()
 
 FileTransfer::FileTransfer (const char* filename, const Sha1Hash& _root_hash) :
-    file_(filename,_root_hash), hs_in_offset_(0)
+    file_(filename,_root_hash), hs_in_offset_(0), cb_installed(0)
 {
     if (files.size()<fd()+1)
         files.resize(fd()+1);
@@ -40,6 +40,24 @@ void    Channel::CloseTransfer (FileTransfer* trans) {
 }
 
 
+void swift::AddProgressCallback (int transfer, TransferProgressCallback cb) {
+    FileTransfer* trans = FileTransfer::file(transfer);
+    if (!trans)
+        return;
+    trans->callbacks[trans->cb_installed++] = cb;
+}
+
+
+void swift::RemoveProgressCallback (int transfer, TransferProgressCallback cb) {
+    FileTransfer* trans = FileTransfer::file(transfer);
+    if (!trans)
+        return;
+    for(int i=0; i<trans->cb_installed; i++)
+        if (trans->callbacks[i]==cb)
+            trans->callbacks[i]=trans->callbacks[--trans->cb_installed];
+}
+
+
 FileTransfer::~FileTransfer ()
 {
     Channel::CloseTransfer(this);
@@ -54,6 +72,15 @@ FileTransfer* FileTransfer::Find (const Sha1Hash& root_hash) {
             return files[i];
     return NULL;
 }
+
+
+int       swift:: Find (Sha1Hash hash) {
+    FileTransfer* t = FileTransfer::Find(hash);
+    if (t)
+        return t->fd();
+    return -1;
+}
+
 
 
 void            FileTransfer::OnPexIn (const Address& addr) {
