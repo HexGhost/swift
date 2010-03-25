@@ -27,7 +27,6 @@ namespace cache {
         uint64_t    file_number;
         uint32_t    open_count;
         kickList_t::iterator kickPointer;
-//        std::list<std::map<swift::Sha1Hash,FileDescription>::iterator>::iterator kickPointer;
         int         fd;
         MetaData    metaData;
     };

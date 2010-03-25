@@ -58,15 +58,15 @@ namespace cache {
                     }
                 }
             }
-            std::cout << (--kickList.end())->hex() <<std::endl;
+//            std::cout << (--kickList.end())->hex() <<std::endl;
 //            for (kickList_t::iterator it = kickList.begin(); it != kickList.end(); it++)
 //                std::cout << it->hex() << " " << files[*it].file_number << " " << files[*it].metaData.lastused << " " << (files[*it].kickPointer->hex()) << std::endl;
             kickList.sort(compareLastUsed(*this));
-            for (kickList_t::iterator it = kickList.begin(); it != kickList.end(); it++)
-                std::cout << it->hex() << " " << files[*it].file_number << " " << files[*it].metaData.lastused << std::endl;
+//            for (kickList_t::iterator it = kickList.begin(); it != kickList.end(); it++)
+//                std::cout << it->hex() << " " << files[*it].file_number << " " << files[*it].metaData.lastused << std::endl;
             index.close();
         }
-        std::cout << cumulated_size << std::endl;
+//        std::cout << cumulated_size << std::endl;
     }
 
     Cache::~Cache(){
@@ -83,10 +83,11 @@ namespace cache {
 
     void Cache::Close (int fd){
         file_map_t::iterator res = files.find(swift::RootMerkleHash(fd));
+//        std::cout << fd << std::endl;
         assert(res != files.end());
         res -> second.metaData.lastused = swift::Datagram::Time();
         res -> second.open_count--;
-        std::cout << res -> second.file_number << " " << res -> second.open_count << std::endl;
+//        std::cout << res -> second.file_number << " " << res -> second.open_count << std::endl;
         if(!res -> second.open_count){
             cumulated_size -= res -> second.metaData.size;
             res -> second.metaData.size = swift::Size(res -> second.fd);
@@ -104,8 +105,8 @@ namespace cache {
                 files.erase(res);
             }
 
-            for (kickList_t::iterator it = kickList.begin(); it != kickList.end(); it++)
-                std::cout << it->hex() << " " << files[*it].file_number << " " << files[*it].metaData.lastused << std::endl;
+//            for (kickList_t::iterator it = kickList.begin(); it != kickList.end(); it++)
+//                std::cout << it->hex() << " " << files[*it].file_number << " " << files[*it].metaData.lastused << std::endl;
         }
     }
 
@@ -136,12 +137,12 @@ namespace cache {
     }
 
     void Cache::kick(){
-        std::cout << "cumul size " << cumulated_size << std::endl;
+//        std::cout << "cumul size " << cumulated_size << std::endl;
         for(kickList_t::iterator it = kickList.begin(); cumulated_size > cache_size && it != kickList.end(); it=kickList.erase(it)){
             file_map_t::iterator res = files.find(*it);
             assert(res != files.end());
             swift::Close(res -> second.fd);
-            std::cout << "kicked " << res -> second.file_number <<std::endl;
+//            std::cout << "kicked " << res -> second.file_number <<std::endl;
             std::string fileName = getFileName(res -> second.file_number);
             unlink(fileName.c_str());
             unlink(fileName.append(".mhash").c_str());
