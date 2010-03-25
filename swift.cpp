@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include "compat.h"
 #include "swift.h"
+#include "cache.h"
 
 using namespace swift;
 
@@ -30,11 +31,15 @@ int main (int argc, char** argv) {
         {"progress",no_argument, 0, 'p'},
         {"http",    optional_argument, 0, 'g'},
         {"wait",    optional_argument, 0, 'w'},
+        {"cache-dir",   required_argument, 0, 1},
+        {"cache-size",  required_argument, 0, 2},
         {0, 0, 0, 0}
     };
 
     Sha1Hash root_hash;
     char* filename = 0;
+    char* cache_dir = 0;
+    uint64_t cache_size = 1000000000;
     bool daemonize = false, report_progress = false;
     Address bindaddr;
     Address tracker;
@@ -101,6 +106,13 @@ int main (int argc, char** argv) {
                     }
                 }
                 break;
+            case 1:
+                cache_dir = strdup(optarg);
+                break;
+            case 2:
+                if (1!=sscanf(optarg, "%Lu", &cache_size))
+                    quit("cannot parse cache-size parameter: %s\n",optarg);
+                break;
         }
 
     }   // arguments parsed
@@ -125,10 +137,19 @@ int main (int argc, char** argv) {
     if (http_gw!=Address())
         InstallHTTPGateway(http_gw);
 
-    if (root_hash!=Sha1Hash::ZERO && !filename)
-        filename = strdup(root_hash.hex().c_str());
+    cache::Cache *cache = NULL;
+    if(cache_dir)
+        cache = new cache::Cache(cache_dir,cache_size);
 
     int file = -1;
+    if (root_hash!=Sha1Hash::ZERO && !filename){
+        if (cache){
+            file = cache->Open(root_hash);
+        }else{
+            filename = strdup(root_hash.hex().c_str());
+        }
+    }
+
     if (filename) {
         file = Open(filename,root_hash);
         if (file<=0)
@@ -146,6 +167,8 @@ int main (int argc, char** argv) {
         fprintf(stderr,"  -p, --progress\treport transfer progress\n");
         fprintf(stderr,"  -g, --http\t[ip:|host:]port to bind HTTP gateway to (default localhost:8080)\n");
         fprintf(stderr,"  -w, --wait\tlimit running time, e.g. 1[DHMs] (default: infinite with -l, -g)\n");
+        fprintf(stderr,"      --cache-dir\tenable cache in specified directory\n");
+        fprintf(stderr,"      --cache-size\tcache size (default: one gigabyte)\n");
     }
 
     tint start_time = NOW;
@@ -165,8 +188,16 @@ int main (int argc, char** argv) {
         }
     }
     
-    if (file!=-1)
-        Close(file);
+    if (file!=-1){
+        if (!filename){
+            cache->Close(file);
+        }else{
+            Close(file);
+        }
+    }
+
+    if (cache)
+        delete cache;
     
     if (Channel::debug_file)
         fclose(Channel::debug_file);

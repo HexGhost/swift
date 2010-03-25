@@ -82,7 +82,7 @@ namespace swift {
 
     typedef std::deque<tintbin> tbqueue;
     typedef std::deque<bin64_t> binqueue;
-    typedef Address   Address;
+//    typedef Address   Address;
 
     /** A heap (priority queue) for timestamped bin numbers (tintbins). */
     class tbheap {
