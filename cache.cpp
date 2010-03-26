@@ -65,6 +65,7 @@ namespace cache {
 //            for (kickList_t::iterator it = kickList.begin(); it != kickList.end(); it++)
 //                std::cout << it->hex() << " " << files[*it].file_number << " " << files[*it].metaData.lastused << std::endl;
             index.close();
+            kick();
         }
 //        std::cout << cumulated_size << std::endl;
     }
